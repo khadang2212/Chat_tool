@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using NetMQ;
 using NetMQ.Sockets;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace ChatServer
 {
@@ -46,31 +47,46 @@ namespace ChatServer
 
 
                     string receivedMessage = puller.ReceiveFrameString(); // Nhận tin nhắn từ bất kỳ client
-                    if (receivedMessage.Contains("joined"))
+                    if (receivedMessage.Contains("message"))
                     {
-                        usersOnline.Invoke(new Action(() =>
-                        {
-                            usersOnline.Items.Add(receivedMessage.Split(':')[1]);
-                            usersOnline.Refresh();
-
-                        }));
-                    }
-
-                    if (receivedMessage.Contains("left"))
-                    {
-                        string username = receivedMessage.Split(':')[1];
-
-                        usersOnline.Invoke(new Action(() =>
-                        {
-                            // Tìm ListViewItem cần xóa
-                            usersOnline.Items.Remove(username);
-                            usersOnline.Refresh();
-                          
-                        }));
+                        publisher.SendFrame(receivedMessage); // Phân Phát tin nhắn đến các client kieeur message
 
                     }
+                    else
+                    {
+                        if (receivedMessage.Contains("joined"))
+                        {
+                            usersOnline.Invoke(new Action(() =>
+                            {
+                                usersOnline.Items.Add(receivedMessage.Split(':')[1]);
+                                usersOnline.Refresh();
 
-                    publisher.SendFrame(receivedMessage); // Phân Phát tin nhắn đến các client
+                            }));
+
+                        }
+
+                        if (receivedMessage.Contains("left"))
+                        {
+                            string username = receivedMessage.Split(':')[1];
+
+                            usersOnline.Invoke(new Action(() =>
+                            {
+                                usersOnline.Items.Remove(username);
+                                usersOnline.Refresh();
+
+                            }));
+
+                         
+
+                        }
+
+                
+
+                        string userList = string.Join("|", usersOnline.Items.Cast<object>().Select(item => item.ToString()));
+                        publisher.SendFrame($"list:{userList}"); // Phân Phát tin nhắn đến các client danh sach cac client online
+                    }
+                   
+
 
 
                 }

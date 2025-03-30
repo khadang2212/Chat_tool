@@ -22,16 +22,16 @@ namespace ChatClient
             InitializeComponent();
             this.FormClosing += MainForm_FormClosing; // Gắn sự kiện
 
+            userOnline.Items.Add("all");
+            userOnline.Refresh();
+            userOnline.SelectedIndex = 0;
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (pusher != null && subscriber != null)
             {
-                pusher.Close();
                 pusher.Dispose();
-
-                subscriber.Close();
                 subscriber.Dispose();
             }
         }
@@ -60,25 +60,55 @@ namespace ChatClient
                 {
                     while (isConnected)
                     {
-                        //receivedMessage = "message:<user>:<message_body>"                   
-                        
-                     
+                        //receivedMessage = "message:<sender>:<receiver>:<message_body>"                   
+
+
                         string receivedMessage = subscriber.ReceiveFrameString(); // Nhận tin nhắn mới
 
-                        if(receivedMessage.Contains("message"))
-                        {
-                            string user = receivedMessage.Split(':')[1];
 
-                            // Kiểm tra đó là tin nhắn từ người khác 
-                            if (user != UserNameTxtBox.Text)
+                        if (receivedMessage.Contains("message"))
+                        {
+                            string userSender = receivedMessage.Split(':')[1];
+                            string userReceiver = receivedMessage.Split(':')[2];
+
+                            string body = receivedMessage.Split(':')[3];
+
+                            // Kiểm tra đó là tin nhắn từ người khác gui cho minh
+                            if (userSender != UserNameTxtBox.Text && userReceiver == UserNameTxtBox.Text || userReceiver == "all")
                             {
                                 messageChatBox.Invoke(new Action(() =>
                                 {
-                                    messageChatBox.Text += $"\n{receivedMessage}";
+                                    messageChatBox.Text += $"\n{userSender}:{body}";
                                 }));
                             }
                         }
-                     
+                        if (receivedMessage.Contains("list:"))
+                        {
+                            List<string> userList = receivedMessage.Split(':')[1].Split('|').ToList();
+
+                            userOnline.Invoke(new Action(() =>
+                            {
+                                userOnline.Items.Clear();
+                                userOnline.Items.Add("all");
+                                userOnline.Refresh();
+                                userOnline.SelectedIndex = 0;
+
+                                foreach (string user in userList)
+                                {
+                                    if (user != UserNameTxtBox.Text)
+                                    {
+
+                                        userOnline.Items.Add(user);
+                                        userOnline.Refresh();
+
+
+                                    }
+                                }
+                            }));
+
+                        }
+
+
 
                     }
                 }).Start();
@@ -102,19 +132,21 @@ namespace ChatClient
                 //pusher.Close();
                 subscriber.Dispose();
                 pusher.Dispose();
-               
+
             }
         }
 
         private void SendBtn_Click(object sender, EventArgs e)
         {
+            //sendingMessage = "message:<sender>:<receiver>:<message_body>"                   
+
 
             if (!(pusher == null))
             {
-                string message = $"{UserNameTxtBox.Text}:{messageTxtBox.Text}";
+                string message = $"message:{UserNameTxtBox.Text}:{userOnline.SelectedItem}:{messageTxtBox.Text}";
                 messageChatBox.Invoke(new Action(() =>
                 {
-                    messageChatBox.Text += $"\n{message}";
+                    messageChatBox.Text += $"\n{UserNameTxtBox.Text}:{messageTxtBox.Text}";
                 }));
                 pusher.SendFrame(message);
             }
@@ -124,6 +156,7 @@ namespace ChatClient
             }
 
         }
+
 
     }
 }
