@@ -144,10 +144,10 @@ namespace ChatClient
             if (!(pusher == null))
             {
                 string message = $"message:{UserNameTxtBox.Text}:{userOnline.SelectedItem}:{messageTxtBox.Text}";
-                messageChatBox.Invoke(new Action(() =>
-                {
-                    messageChatBox.Text += $"\n{UserNameTxtBox.Text}:{messageTxtBox.Text}";
-                }));
+                //messageChatBox.Invoke(new Action(() =>
+                //{
+                //    messageChatBox.Text += $"\n{UserNameTxtBox.Text}:{messageTxtBox.Text}";
+                //}));
                 pusher.SendFrame(message);
             }
             else
